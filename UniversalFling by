@@ -1,0 +1,635 @@
+-- // Script reescrito e otimizado por Dracosw
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Sistema de Salvamento Seguro
+local SETTINGS_FILE = "DracoswFlingSettings.json"
+local currentSettings = {
+    TouchFlingEnabled = true,
+    AntiFlingEnabled = false,
+    AntiSitEnabled = false,
+    AutoCouchEnabled = false
+}
+
+pcall(function()
+    if readfile and isfile and isfile(SETTINGS_FILE) then
+        local data = HttpService:JSONDecode(readfile(SETTINGS_FILE))
+        if type(data) == "table" then
+            for k, v in pairs(data) do currentSettings[k] = v end
+        end
+    end
+end)
+
+local function saveSettings()
+    pcall(function()
+        if writefile then
+            writefile(SETTINGS_FILE, HttpService:JSONEncode(currentSettings))
+        end
+    end)
+end
+
+-- Variáveis Globais
+getgenv().FPDH = workspace.FallenPartsDestroyHeight
+local flingDurationPerPlayer = 2 
+local isFlingingActive = false
+local selectedTargetPlayer = nil
+local isSpectating = false
+
+-- Bypass ReplicatedStorage
+pcall(function()
+    if not ReplicatedStorage:FindFirstChild("juisdfj0i32i0eidsuf0iok") then
+        local detection = Instance.new("Decal")
+        detection.Name = "juisdfj0i32i0eidsuf0iok"
+        detection.Parent = ReplicatedStorage
+    end
+end)
+
+-- Função para Pegar o Couch (Cobalt Event)
+local function getCouch()
+    task.spawn(function()
+        pcall(function()
+            local re = ReplicatedStorage:FindFirstChild("RE")
+            local event = re and re:FindFirstChild("1Too1l")
+            if event then
+                event:InvokeServer("PickingTools", "Couch")
+            end
+        end)
+    end)
+end
+
+-- Motor Touch Fling Otimizado
+RunService.Heartbeat:Connect(function()
+    if currentSettings.TouchFlingEnabled or isFlingingActive then
+        local c = LocalPlayer.Character
+        local hrp = c and c:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local vel = hrp.Velocity
+            hrp.Velocity = vel * 10000 + Vector3.new(0, 10000, 0)
+            RunService.RenderStepped:Wait()
+            if hrp then hrp.Velocity = vel end
+            RunService.Stepped:Wait()
+            if hrp then hrp.Velocity = vel + Vector3.new(0, 0.1, 0) end
+        end
+    end
+end)
+
+-- Anti Fling Otimizado
+RunService.Stepped:Connect(function()
+    if currentSettings.AntiFlingEnabled then
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                for _, part in ipairs(p.Character:GetChildren()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+    end
+end)
+
+local function resetPlayerCollisions()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            for _, part in ipairs(p.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+end
+
+-- Anti Sit Instantâneo (Impede totalmente de sentar)
+RunService.Stepped:Connect(function()
+    if currentSettings.AntiSitEnabled then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+            if hum.Sit then
+                hum.Sit = false
+                hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end
+        end
+    end
+end)
+
+-- Core Fling Execution Engine
+local function flingPlayer(TargetPlayer)
+    local Character = LocalPlayer.Character
+    local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+    local RootPart = Humanoid and Humanoid.RootPart
+
+    local TCharacter = TargetPlayer.Character
+    local THumanoid = TCharacter and TCharacter:FindFirstChildOfClass("Humanoid")
+    local TRootPart = THumanoid and THumanoid.RootPart
+    local THead = TCharacter and TCharacter:FindFirstChild("Head")
+    local Accessory = TCharacter and TCharacter:FindFirstChildOfClass("Accessory")
+    local Handle = Accessory and Accessory:FindFirstChild("Handle")
+
+    if Character and Humanoid and RootPart then
+        if RootPart.Velocity.Magnitude < 50 then
+            getgenv().OldPos = RootPart.CFrame
+        end
+        
+        if THumanoid and THumanoid.Sit then return end
+
+        if not isSpectating then
+            if THead then
+                workspace.CurrentCamera.CameraSubject = THead
+            elseif Handle then
+                workspace.CurrentCamera.CameraSubject = Handle
+            else
+                workspace.CurrentCamera.CameraSubject = THumanoid
+            end
+        end
+
+        if not TCharacter:FindFirstChildWhichIsA("BasePart") then return end
+
+        local function FPos(BasePart, Pos, Ang)
+            RootPart.CFrame = CFrame.new(BasePart.Position) * Pos * Ang
+            Character:SetPrimaryPartCFrame(CFrame.new(BasePart.Position) * Pos * Ang)
+            RootPart.Velocity = Vector3.new(9e7, 9e7 * 10, 9e7)
+            RootPart.RotVelocity = Vector3.new(9e8, 9e8, 9e8)
+        end
+
+        local function SFBasePart(BasePart)
+            local Time = tick()
+            local Angle = 0
+
+            repeat
+                if not isFlingingActive then break end
+                if RootPart and THumanoid then
+                    if BasePart.Velocity.Magnitude < 50 then
+                        Angle = Angle + 100
+                        FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
+                        task.wait()
+                        FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
+                        task.wait()
+                    else
+                        FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
+                        task.wait()
+                        FPos(BasePart, CFrame.new(0, -1.5, -THumanoid.WalkSpeed), CFrame.Angles(0, 0, 0))
+                        task.wait()
+                    end
+                else
+                    break
+                end
+            until not isFlingingActive or BasePart.Velocity.Magnitude > 500 or BasePart.Parent ~= TargetPlayer.Character or TargetPlayer.Parent ~= Players or THumanoid.Sit or Humanoid.Health <= 0 or tick() > Time + flingDurationPerPlayer
+        end
+
+        workspace.FallenPartsDestroyHeight = 0/0
+        local BV = Instance.new("BodyVelocity")
+        BV.Name = "EpixVel"
+        BV.Parent = RootPart
+        BV.Velocity = Vector3.new(9e8, 9e8, 9e8)
+        BV.MaxForce = Vector3.new(1/0, 1/0, 1/0)
+        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+
+        if TRootPart then
+            SFBasePart(TRootPart)
+        elseif THead then
+            SFBasePart(THead)
+        end
+
+        if BV then BV:Destroy() end
+        
+        RootPart.Velocity = Vector3.new(0, 0, 0)
+        RootPart.RotVelocity = Vector3.new(0, 0, 0)
+
+        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+
+        if not isSpectating then
+            workspace.CurrentCamera.CameraSubject = Humanoid
+        end
+
+        if getgenv().OldPos then
+            local startTime = tick()
+            repeat
+                RootPart.CFrame = getgenv().OldPos
+                Character:SetPrimaryPartCFrame(getgenv().OldPos)
+                RootPart.Velocity = Vector3.new(0, 0, 0)
+                RootPart.RotVelocity = Vector3.new(0, 0, 0)
+                Humanoid:ChangeState("GettingUp")
+                task.wait()
+            until (RootPart.Position - getgenv().OldPos.p).Magnitude < 5 or not isFlingingActive or (tick() - startTime > 1)
+        end
+
+        for _, x in pairs(Character:GetChildren()) do
+            if x:IsA("BasePart") then
+                x.Velocity = Vector3.new(0, 0, 0)
+                x.RotVelocity = Vector3.new(0, 0, 0)
+            end
+        end
+
+        workspace.FallenPartsDestroyHeight = getgenv().FPDH
+    end
+end
+
+-- // INTERFACE GRAFICA //
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+if PlayerGui:FindFirstChild("DracoswFlingGui") then
+    PlayerGui.DracoswFlingGui:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "DracoswFlingGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 260, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -130, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+-- Borda Vermelho e Branco Brilhoso
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 2
+UIStroke.Parent = MainFrame
+
+local UIGradient = Instance.new("UIGradient")
+UIGradient.Color = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(230, 40, 40)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 40, 40))
+})
+UIGradient.Parent = UIStroke
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -40, 0, 28)
+TitleLabel.Position = UDim2.new(0, 10, 0, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Universal Fling"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.TextSize = 15
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Parent = MainFrame
+
+-- Botão Engrenagem
+local SettingsBtn = Instance.new("TextButton")
+SettingsBtn.Size = UDim2.new(0, 28, 0, 28)
+SettingsBtn.Position = UDim2.new(1, -30, 0, 0)
+SettingsBtn.BackgroundTransparency = 1
+SettingsBtn.Text = "⚙️"
+SettingsBtn.TextSize = 15
+SettingsBtn.Parent = MainFrame
+
+-- ABA 1: Jogadores
+local MainTab = Instance.new("Frame")
+MainTab.Size = UDim2.new(1, 0, 1, -28)
+MainTab.Position = UDim2.new(0, 0, 0, 28)
+MainTab.BackgroundTransparency = 1
+MainTab.Visible = true
+MainTab.Parent = MainFrame
+
+local PlayerScroll = Instance.new("ScrollingFrame")
+PlayerScroll.Size = UDim2.new(1, -16, 0, 195)
+PlayerScroll.Position = UDim2.new(0, 8, 0, 4)
+PlayerScroll.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+PlayerScroll.BorderSizePixel = 0
+PlayerScroll.ScrollBarThickness = 3
+PlayerScroll.Parent = MainTab
+
+local ScrollCorner = Instance.new("UICorner")
+ScrollCorner.CornerRadius = UDim.new(0, 6)
+ScrollCorner.Parent = PlayerScroll
+
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = PlayerScroll
+UIListLayout.Padding = UDim.new(0, 4)
+
+-- Botão Fling Principal
+local FlingButton = Instance.new("TextButton")
+FlingButton.Size = UDim2.new(0.68, -8, 0, 32)
+FlingButton.Position = UDim2.new(0, 8, 0, 205)
+FlingButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+FlingButton.BorderSizePixel = 0
+FlingButton.Text = "Fling: Selecione"
+FlingButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlingButton.Font = Enum.Font.SourceSansBold
+FlingButton.TextSize = 13
+FlingButton.Parent = MainTab
+
+local FlingBtnCorner = Instance.new("UICorner")
+FlingBtnCorner.CornerRadius = UDim.new(0, 6)
+FlingBtnCorner.Parent = FlingButton
+
+-- Botão View / Unview
+local ViewButton = Instance.new("TextButton")
+ViewButton.Size = UDim2.new(0.32, -8, 0, 32)
+ViewButton.Position = UDim2.new(0.68, 4, 0, 205)
+ViewButton.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+ViewButton.BorderSizePixel = 0
+ViewButton.Text = "View"
+ViewButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ViewButton.Font = Enum.Font.SourceSansBold
+ViewButton.TextSize = 13
+ViewButton.Parent = MainTab
+
+local ViewBtnCorner = Instance.new("UICorner")
+ViewBtnCorner.CornerRadius = UDim.new(0, 6)
+ViewBtnCorner.Parent = ViewButton
+
+-- ABA 2: Configurações
+local SettingsTab = Instance.new("Frame")
+SettingsTab.Size = UDim2.new(1, 0, 1, -28)
+SettingsTab.Position = UDim2.new(0, 0, 0, 28)
+SettingsTab.BackgroundTransparency = 1
+SettingsTab.Visible = false
+SettingsTab.Parent = MainFrame
+
+local TouchFlingBtn = Instance.new("TextButton")
+TouchFlingBtn.Size = UDim2.new(1, -16, 0, 32)
+TouchFlingBtn.Position = UDim2.new(0, 8, 0, 8)
+TouchFlingBtn.BackgroundColor3 = currentSettings.TouchFlingEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+TouchFlingBtn.BorderSizePixel = 0
+TouchFlingBtn.Text = "Touch Fling: " .. (currentSettings.TouchFlingEnabled and "ON" or "OFF")
+TouchFlingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+TouchFlingBtn.Font = Enum.Font.SourceSansBold
+TouchFlingBtn.TextSize = 13
+TouchFlingBtn.Parent = SettingsTab
+
+local TFCorner = Instance.new("UICorner")
+TFCorner.CornerRadius = UDim.new(0, 6)
+TFCorner.Parent = TouchFlingBtn
+
+local AntiFlingBtn = Instance.new("TextButton")
+AntiFlingBtn.Size = UDim2.new(1, -16, 0, 32)
+AntiFlingBtn.Position = UDim2.new(0, 8, 0, 46)
+AntiFlingBtn.BackgroundColor3 = currentSettings.AntiFlingEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+AntiFlingBtn.BorderSizePixel = 0
+AntiFlingBtn.Text = "Anti Fling: " .. (currentSettings.AntiFlingEnabled and "ON" or "OFF")
+AntiFlingBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AntiFlingBtn.Font = Enum.Font.SourceSansBold
+AntiFlingBtn.TextSize = 13
+AntiFlingBtn.Parent = SettingsTab
+
+local AFCorner = Instance.new("UICorner")
+AFCorner.CornerRadius = UDim.new(0, 6)
+AFCorner.Parent = AntiFlingBtn
+
+local AntiSitBtn = Instance.new("TextButton")
+AntiSitBtn.Size = UDim2.new(1, -16, 0, 32)
+AntiSitBtn.Position = UDim2.new(0, 8, 0, 84)
+AntiSitBtn.BackgroundColor3 = currentSettings.AntiSitEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+AntiSitBtn.BorderSizePixel = 0
+AntiSitBtn.Text = "Anti Sit: " .. (currentSettings.AntiSitEnabled and "ON" or "OFF")
+AntiSitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AntiSitBtn.Font = Enum.Font.SourceSansBold
+AntiSitBtn.TextSize = 13
+AntiSitBtn.Parent = SettingsTab
+
+local ASCorner = Instance.new("UICorner")
+ASCorner.CornerRadius = UDim.new(0, 6)
+ASCorner.Parent = AntiSitBtn
+
+local AutoCouchBtn = Instance.new("TextButton")
+AutoCouchBtn.Size = UDim2.new(1, -16, 0, 32)
+AutoCouchBtn.Position = UDim2.new(0, 8, 0, 122)
+AutoCouchBtn.BackgroundColor3 = currentSettings.AutoCouchEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+AutoCouchBtn.BorderSizePixel = 0
+AutoCouchBtn.Text = "Auto Couch: " .. (currentSettings.AutoCouchEnabled and "ON" or "OFF")
+AutoCouchBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoCouchBtn.Font = Enum.Font.SourceSansBold
+AutoCouchBtn.TextSize = 13
+AutoCouchBtn.Parent = SettingsTab
+
+local ACCorner = Instance.new("UICorner")
+ACCorner.CornerRadius = UDim.new(0, 6)
+ACCorner.Parent = AutoCouchBtn
+
+-- Rodapé
+local CreditsLabel = Instance.new("TextLabel")
+CreditsLabel.Size = UDim2.new(1, 0, 0, 18)
+CreditsLabel.Position = UDim2.new(0, 0, 1, -18)
+CreditsLabel.BackgroundTransparency = 1
+CreditsLabel.Text = "By Dracosw"
+CreditsLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
+CreditsLabel.Font = Enum.Font.SourceSansItalic
+CreditsLabel.TextSize = 11
+CreditsLabel.Parent = MainFrame
+
+-- Troca de Aba
+local isSettingsOpen = false
+SettingsBtn.MouseButton1Click:Connect(function()
+    isSettingsOpen = not isSettingsOpen
+    MainTab.Visible = not isSettingsOpen
+    SettingsTab.Visible = isSettingsOpen
+    TitleLabel.Text = isSettingsOpen and "Configurações" or "Universal Fling"
+end)
+
+TouchFlingBtn.MouseButton1Click:Connect(function()
+    currentSettings.TouchFlingEnabled = not currentSettings.TouchFlingEnabled
+    TouchFlingBtn.BackgroundColor3 = currentSettings.TouchFlingEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+    TouchFlingBtn.Text = "Touch Fling: " .. (currentSettings.TouchFlingEnabled and "ON" or "OFF")
+    saveSettings()
+end)
+
+AntiFlingBtn.MouseButton1Click:Connect(function()
+    currentSettings.AntiFlingEnabled = not currentSettings.AntiFlingEnabled
+    if not currentSettings.AntiFlingEnabled then
+        resetPlayerCollisions()
+    end
+    AntiFlingBtn.BackgroundColor3 = currentSettings.AntiFlingEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+    AntiFlingBtn.Text = "Anti Fling: " .. (currentSettings.AntiFlingEnabled and "ON" or "OFF")
+    saveSettings()
+end)
+
+AntiSitBtn.MouseButton1Click:Connect(function()
+    currentSettings.AntiSitEnabled = not currentSettings.AntiSitEnabled
+    AntiSitBtn.BackgroundColor3 = currentSettings.AntiSitEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+    AntiSitBtn.Text = "Anti Sit: " .. (currentSettings.AntiSitEnabled and "ON" or "OFF")
+    saveSettings()
+end)
+
+AutoCouchBtn.MouseButton1Click:Connect(function()
+    currentSettings.AutoCouchEnabled = not currentSettings.AutoCouchEnabled
+    AutoCouchBtn.BackgroundColor3 = currentSettings.AutoCouchEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+    AutoCouchBtn.Text = "Auto Couch: " .. (currentSettings.AutoCouchEnabled and "ON" or "OFF")
+    
+    if currentSettings.AutoCouchEnabled then
+        getCouch()
+    end
+    saveSettings()
+end)
+
+-- Sistema de Espectar (View / Unview)
+local function stopSpectating()
+    isSpectating = false
+    ViewButton.Text = "View"
+    ViewButton.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+    local myHum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if myHum then
+        workspace.CurrentCamera.CameraSubject = myHum
+    end
+end
+
+ViewButton.MouseButton1Click:Connect(function()
+    if not isSpectating then
+        if not selectedTargetPlayer then
+            ViewButton.Text = "Selecione!"
+            task.wait(1)
+            ViewButton.Text = "View"
+            return
+        end
+        local tChar = selectedTargetPlayer.Character
+        local tHum = tChar and tChar:FindFirstChildOfClass("Humanoid")
+        if tHum then
+            isSpectating = true
+            workspace.CurrentCamera.CameraSubject = tHum
+            ViewButton.Text = "Unview"
+            ViewButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        end
+    else
+        stopSpectating()
+    end
+end)
+
+-- Sistema de Lista Otimizado com Nick e Avatar Maiores
+local playerButtons = {}
+
+local function refreshPlayerList()
+    local currentPlayers = Players:GetPlayers()
+    local activePlayers = {}
+
+    for _, p in ipairs(currentPlayers) do
+        if p ~= LocalPlayer then
+            table.insert(activePlayers, p)
+        end
+    end
+
+    for p, btn in pairs(playerButtons) do
+        if not table.find(activePlayers, p) then
+            btn:Destroy()
+            playerButtons[p] = nil
+            if selectedTargetPlayer == p and isSpectating then
+                stopSpectating()
+            end
+        end
+    end
+
+    for _, p in ipairs(activePlayers) do
+        local pBtn = playerButtons[p]
+        if not pBtn then
+            pBtn = Instance.new("TextButton")
+            pBtn.Size = UDim2.new(1, -5, 0, 38)
+            pBtn.BorderSizePixel = 0
+            pBtn.Text = ""
+            pBtn.Parent = PlayerScroll
+
+            local btnCorner = Instance.new("UICorner")
+            btnCorner.CornerRadius = UDim.new(0, 4)
+            btnCorner.Parent = pBtn
+
+            -- Quadrado da Foto Maior (32x32)
+            local AvatarBox = Instance.new("ImageLabel")
+            AvatarBox.Name = "AvatarBox"
+            AvatarBox.Size = UDim2.new(0, 32, 0, 32)
+            AvatarBox.Position = UDim2.new(0, 3, 0.5, -16)
+            AvatarBox.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+            AvatarBox.BorderSizePixel = 0
+            AvatarBox.Parent = pBtn
+
+            local avatarCorner = Instance.new("UICorner")
+            avatarCorner.CornerRadius = UDim.new(0, 4)
+            avatarCorner.Parent = AvatarBox
+
+            -- Nome do Jogador Maior (TextSize 15 + Bold)
+            local NameLabel = Instance.new("TextLabel")
+            NameLabel.Name = "NameLabel"
+            NameLabel.Size = UDim2.new(1, -44, 1, 0)
+            NameLabel.Position = UDim2.new(0, 41, 0, 0)
+            NameLabel.BackgroundTransparency = 1
+            NameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            NameLabel.Font = Enum.Font.SourceSansBold
+            NameLabel.TextSize = 15
+            NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+            NameLabel.Parent = pBtn
+
+            task.spawn(function()
+                pcall(function()
+                    AvatarBox.Image = Players:GetUserThumbnailAsync(p.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+                end)
+            end)
+
+            pBtn.MouseButton1Click:Connect(function()
+                selectedTargetPlayer = p
+                if not isFlingingActive then
+                    FlingButton.Text = "Fling: " .. p.Name
+                end
+                if isSpectating then
+                    local tChar = p.Character
+                    local tHum = tChar and tChar:FindFirstChildOfClass("Humanoid")
+                    if tHum then
+                        workspace.CurrentCamera.CameraSubject = tHum
+                    end
+                end
+                refreshPlayerList()
+            end)
+
+            playerButtons[p] = pBtn
+        end
+
+        pBtn.BackgroundColor3 = (selectedTargetPlayer == p) and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(35, 35, 45)
+        local nameLab = pBtn:FindFirstChild("NameLabel")
+        if nameLab then nameLab.Text = p.Name end
+    end
+
+    PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, #activePlayers * 42)
+end
+
+Players.PlayerAdded:Connect(refreshPlayerList)
+Players.PlayerRemoving:Connect(refreshPlayerList)
+refreshPlayerList()
+
+-- Execução do Auto Couch
+if currentSettings.AutoCouchEnabled then
+    getCouch()
+end
+
+-- Botão Fling Principal
+FlingButton.MouseButton1Click:Connect(function()
+    if not isFlingingActive then
+        if not selectedTargetPlayer then
+            FlingButton.Text = "Selecione!"
+            task.wait(1)
+            FlingButton.Text = "Fling: Selecione"
+            return
+        end
+
+        isFlingingActive = true
+        FlingButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        FlingButton.Text = "Parar Fling"
+
+        task.spawn(function()
+            while isFlingingActive and selectedTargetPlayer and selectedTargetPlayer.Parent == Players do
+                flingPlayer(selectedTargetPlayer)
+                task.wait(0.1)
+            end
+
+            if isFlingingActive then
+                isFlingingActive = false
+                FlingButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+                FlingButton.Text = selectedTargetPlayer and ("Fling: " .. selectedTargetPlayer.Name) or "Fling: Selecione"
+            end
+        end)
+    else
+        isFlingingActive = false
+        FlingButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+        FlingButton.Text = selectedTargetPlayer and ("Fling: " .. selectedTargetPlayer.Name) or "Fling: Selecione"
+    end
+end)
