@@ -12,7 +12,8 @@ local currentSettings = {
     TouchFlingEnabled = true,
     AntiFlingEnabled = false,
     AntiSitEnabled = false,
-    AutoCouchEnabled = false
+    AutoCouchEnabled = false,
+    BringPartsEnabled = false
 }
 
 pcall(function()
@@ -38,6 +39,7 @@ local flingDurationPerPlayer = 2
 local isFlingingActive = false
 local selectedTargetPlayer = nil
 local isSpectating = false
+local bringPartsGuiInstance = nil
 
 -- Bypass ReplicatedStorage
 pcall(function()
@@ -48,7 +50,7 @@ pcall(function()
     end
 end)
 
--- Função para Pegar o Couch (Cobalt Event)
+-- Função Auto Couch
 local function getCouch()
     task.spawn(function()
         pcall(function()
@@ -61,7 +63,292 @@ local function getCouch()
     end)
 end
 
--- Motor Touch Fling Otimizado
+-- Motor Bring Parts (Ajustado com View próprio)
+local function destroyBringPartsGui()
+    if bringPartsGuiInstance then
+        bringPartsGuiInstance:Destroy()
+        bringPartsGuiInstance = nil
+    end
+end
+
+local function spawnBringPartsGui(onCloseCallback)
+    destroyBringPartsGui()
+
+    local parentGui = (gethui and gethui()) or LocalPlayer:WaitForChild("PlayerGui")
+
+    local Gui = Instance.new("ScreenGui")
+    Gui.Name = "DracoswBringPartsGui"
+    Gui.ResetOnSpawn = false
+    Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    Gui.Parent = parentGui
+    bringPartsGuiInstance = Gui
+
+    -- Menu mais largo
+    local Main = Instance.new("Frame")
+    Main.Name = "Main"
+    Main.Parent = Gui
+    Main.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    Main.BorderSizePixel = 0
+    Main.Position = UDim2.new(0.33, 0, 0.5, 0)
+    Main.Size = UDim2.new(0, 270, 0, 120)
+    Main.Active = true
+    Main.Draggable = true
+
+    local UICorner = Instance.new("UICorner")
+    UICorner.CornerRadius = UDim.new(0, 8)
+    UICorner.Parent = Main
+
+    local UIStroke = Instance.new("UIStroke")
+    UIStroke.Thickness = 2
+    UIStroke.Parent = Main
+
+    local UIGradient = Instance.new("UIGradient")
+    UIGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(230, 40, 40)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(230, 40, 40))
+    })
+    UIGradient.Parent = UIStroke
+
+    local Label = Instance.new("TextLabel")
+    Label.Name = "Label"
+    Label.Parent = Main
+    Label.BackgroundTransparency = 1
+    Label.Position = UDim2.new(0, 10, 0, 2)
+    Label.Size = UDim2.new(1, -40, 0, 24)
+    Label.Font = Enum.Font.SourceSansBold
+    Label.Text = "Bring Parts"
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local CloseXBtn = Instance.new("TextButton")
+    CloseXBtn.Name = "CloseXBtn"
+    CloseXBtn.Parent = Main
+    CloseXBtn.BackgroundTransparency = 1
+    CloseXBtn.Position = UDim2.new(1, -26, 0, 2)
+    CloseXBtn.Size = UDim2.new(0, 24, 0, 24)
+    CloseXBtn.Font = Enum.Font.SourceSansBold
+    CloseXBtn.Text = "X"
+    CloseXBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+    CloseXBtn.TextSize = 16
+
+    local Box = Instance.new("TextBox")
+    Box.Name = "Box"
+    Box.Parent = Main
+    Box.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Box.BorderSizePixel = 0
+    Box.Position = UDim2.new(0, 10, 0, 32)
+    Box.Size = UDim2.new(1, -20, 0, 32)
+    Box.Font = Enum.Font.SourceSansSemibold
+    Box.PlaceholderText = "Nick do Jogador..."
+    Box.Text = ""
+    Box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Box.TextSize = 14
+
+    local BoxCorner = Instance.new("UICorner")
+    BoxCorner.CornerRadius = UDim.new(0, 6)
+    BoxCorner.Parent = Box
+
+    -- Botão Bring (Agora ligeiramente menor à esquerda)
+    local Button = Instance.new("TextButton")
+    Button.Name = "Button"
+    Button.Parent = Main
+    Button.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    Button.BorderSizePixel = 0
+    Button.Position = UDim2.new(0, 10, 0, 72)
+    Button.Size = UDim2.new(0.65, -6, 0, 35)
+    Button.Font = Enum.Font.SourceSansBold
+    Button.Text = "Bring | Off"
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.TextSize = 14
+
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 6)
+    BtnCorner.Parent = Button
+
+    -- Botão View / Unview (No meio para a direita)
+    local BPViewBtn = Instance.new("TextButton")
+    BPViewBtn.Name = "BPViewBtn"
+    BPViewBtn.Parent = Main
+    BPViewBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+    BPViewBtn.BorderSizePixel = 0
+    BPViewBtn.Position = UDim2.new(0.65, 4, 0, 72)
+    BPViewBtn.Size = UDim2.new(0.35, -14, 0, 35)
+    BPViewBtn.Font = Enum.Font.SourceSansBold
+    BPViewBtn.Text = "View"
+    BPViewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BPViewBtn.TextSize = 14
+
+    local BPViewCorner = Instance.new("UICorner")
+    BPViewCorner.CornerRadius = UDim.new(0, 6)
+    BPViewCorner.Parent = BPViewBtn
+
+    local character, humanoidRootPart
+    local Folder = Instance.new("Folder", Workspace)
+    local Part = Instance.new("Part", Folder)
+    local Attachment1 = Instance.new("Attachment", Part)
+    Part.Anchored = true
+    Part.CanCollide = false
+    Part.Transparency = 1
+
+    if not getgenv().Network then
+        getgenv().Network = {
+            BaseParts = {},
+            Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
+        }
+
+        Network.RetainPart = function(p)
+            if p:IsA("BasePart") and p:IsDescendantOf(Workspace) then
+                table.insert(Network.BaseParts, p)
+                p.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+                p.CanCollide = false
+            end
+        end
+
+        local function EnablePartControl()
+            LocalPlayer.ReplicationFocus = Workspace
+            RunService.Heartbeat:Connect(function()
+                sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+                for _, p in pairs(Network.BaseParts) do
+                    if p:IsDescendantOf(Workspace) then
+                        p.Velocity = Network.Velocity
+                    end
+                end
+            end)
+        end
+        EnablePartControl()
+    end
+
+    local function ForcePart(v)
+        if v:IsA("BasePart") and not v.Anchored and not v.Parent:FindFirstChildOfClass("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
+            for _, x in ipairs(v:GetChildren()) do
+                if x:IsA("BodyMover") or x:IsA("RocketPropulsion") then x:Destroy() end
+            end
+            if v:FindFirstChild("Attachment") then v:FindFirstChild("Attachment"):Destroy() end
+            if v:FindFirstChild("AlignPosition") then v:FindFirstChild("AlignPosition"):Destroy() end
+            if v:FindFirstChild("Torque") then v:FindFirstChild("Torque"):Destroy() end
+            v.CanCollide = false
+            local Torque = Instance.new("Torque", v)
+            Torque.Torque = Vector3.new(100000, 100000, 100000)
+            local AlignPosition = Instance.new("AlignPosition", v)
+            local Attachment2 = Instance.new("Attachment", v)
+            Torque.Attachment0 = Attachment2
+            AlignPosition.MaxForce = math.huge
+            AlignPosition.MaxVelocity = math.huge
+            AlignPosition.Responsiveness = 200
+            AlignPosition.Attachment0 = Attachment2
+            AlignPosition.Attachment1 = Attachment1
+        end
+    end
+
+    local blackHoleActive = false
+    local DescendantAddedConnection
+
+    local function toggleBlackHole()
+        blackHoleActive = not blackHoleActive
+        if blackHoleActive then
+            Button.Text = "Bring | On"
+            Button.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+            for _, v in ipairs(Workspace:GetDescendants()) do ForcePart(v) end
+
+            DescendantAddedConnection = Workspace.DescendantAdded:Connect(function(v)
+                if blackHoleActive then ForcePart(v) end
+            end)
+
+            task.spawn(function()
+                while blackHoleActive and RunService.RenderStepped:Wait() do
+                    if humanoidRootPart then
+                        Attachment1.WorldCFrame = humanoidRootPart.CFrame
+                    end
+                end
+            end)
+        else
+            Button.Text = "Bring | Off"
+            Button.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+            if DescendantAddedConnection then DescendantAddedConnection:Disconnect() end
+        end
+    end
+
+    local function getPlayer(name)
+        local lowerName = string.lower(name)
+        for _, p in pairs(Players:GetPlayers()) do
+            if string.find(string.lower(p.Name), lowerName) or string.find(string.lower(p.DisplayName), lowerName) then
+                return p
+            end
+        end
+    end
+
+    local foundPlayer = nil
+    Box.FocusLost:Connect(function(enterPressed)
+        if enterPressed then
+            foundPlayer = getPlayer(Box.Text)
+            if foundPlayer then Box.Text = foundPlayer.Name end
+        end
+    end)
+
+    Button.MouseButton1Click:Connect(function()
+        if not foundPlayer and Box.Text ~= "" then
+            foundPlayer = getPlayer(Box.Text)
+        end
+        if foundPlayer then
+            character = foundPlayer.Character or foundPlayer.CharacterAdded:Wait()
+            humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+            toggleBlackHole()
+        else
+            Button.Text = "Selecione!"
+            task.wait(1)
+            Button.Text = "Bring | Off"
+        end
+    end)
+
+    -- Lógica de View / Unview no Bring Parts
+    local isBpSpectating = false
+    BPViewBtn.MouseButton1Click:Connect(function()
+        if not foundPlayer and Box.Text ~= "" then
+            foundPlayer = getPlayer(Box.Text)
+            if foundPlayer then Box.Text = foundPlayer.Name end
+        end
+
+        if not foundPlayer then
+            BPViewBtn.Text = "Selecione!"
+            task.wait(1)
+            BPViewBtn.Text = "View"
+            return
+        end
+
+        if not isBpSpectating then
+            local tChar = foundPlayer.Character
+            local tHum = tChar and tChar:FindFirstChildOfClass("Humanoid")
+            if tHum then
+                isBpSpectating = true
+                workspace.CurrentCamera.CameraSubject = tHum
+                BPViewBtn.Text = "Unview"
+                BPViewBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+            end
+        else
+            isBpSpectating = false
+            BPViewBtn.Text = "View"
+            BPViewBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+            local myHum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if myHum then
+                workspace.CurrentCamera.CameraSubject = myHum
+            end
+        end
+    end)
+
+    CloseXBtn.MouseButton1Click:Connect(function()
+        if blackHoleActive then toggleBlackHole() end
+        if isBpSpectating then
+            local myHum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if myHum then workspace.CurrentCamera.CameraSubject = myHum end
+        end
+        destroyBringPartsGui()
+        if onCloseCallback then onCloseCallback() end
+    end)
+end
+
+-- Motor Touch Fling
 RunService.Heartbeat:Connect(function()
     if currentSettings.TouchFlingEnabled or isFlingingActive then
         local c = LocalPlayer.Character
@@ -77,9 +364,9 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Anti Fling Otimizado
+-- Anti Fling
 RunService.Stepped:Connect(function()
-    if currentSettings.AntiFlingEnabled then
+    if currentSettings.AntiFlingEnabled and not isFlingingActive then
         for _, p in ipairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character then
                 for _, part in ipairs(p.Character:GetChildren()) do
@@ -104,9 +391,9 @@ local function resetPlayerCollisions()
     end
 end
 
--- Anti Sit Instantâneo (Impede totalmente de sentar)
+-- Anti Sit
 RunService.Stepped:Connect(function()
-    if currentSettings.AntiSitEnabled then
+    if currentSettings.AntiSitEnabled and not isFlingingActive then
         local char = LocalPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
         if hum then
@@ -217,7 +504,7 @@ local function flingPlayer(TargetPlayer)
                 RootPart.RotVelocity = Vector3.new(0, 0, 0)
                 Humanoid:ChangeState("GettingUp")
                 task.wait()
-            until (RootPart.Position - getgenv().OldPos.p).Magnitude < 5 or not isFlingingActive or (tick() - startTime > 1)
+            until (RootPart.Position - getgenv().OldPos.p).Magnitude < 3 or not isFlingingActive or (tick() - startTime > 1)
         end
 
         for _, x in pairs(Character:GetChildren()) do
@@ -353,8 +640,8 @@ SettingsTab.Visible = false
 SettingsTab.Parent = MainFrame
 
 local TouchFlingBtn = Instance.new("TextButton")
-TouchFlingBtn.Size = UDim2.new(1, -16, 0, 32)
-TouchFlingBtn.Position = UDim2.new(0, 8, 0, 8)
+TouchFlingBtn.Size = UDim2.new(1, -16, 0, 30)
+TouchFlingBtn.Position = UDim2.new(0, 8, 0, 6)
 TouchFlingBtn.BackgroundColor3 = currentSettings.TouchFlingEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
 TouchFlingBtn.BorderSizePixel = 0
 TouchFlingBtn.Text = "Touch Fling: " .. (currentSettings.TouchFlingEnabled and "ON" or "OFF")
@@ -368,8 +655,8 @@ TFCorner.CornerRadius = UDim.new(0, 6)
 TFCorner.Parent = TouchFlingBtn
 
 local AntiFlingBtn = Instance.new("TextButton")
-AntiFlingBtn.Size = UDim2.new(1, -16, 0, 32)
-AntiFlingBtn.Position = UDim2.new(0, 8, 0, 46)
+AntiFlingBtn.Size = UDim2.new(1, -16, 0, 30)
+AntiFlingBtn.Position = UDim2.new(0, 8, 0, 40)
 AntiFlingBtn.BackgroundColor3 = currentSettings.AntiFlingEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
 AntiFlingBtn.BorderSizePixel = 0
 AntiFlingBtn.Text = "Anti Fling: " .. (currentSettings.AntiFlingEnabled and "ON" or "OFF")
@@ -383,8 +670,8 @@ AFCorner.CornerRadius = UDim.new(0, 6)
 AFCorner.Parent = AntiFlingBtn
 
 local AntiSitBtn = Instance.new("TextButton")
-AntiSitBtn.Size = UDim2.new(1, -16, 0, 32)
-AntiSitBtn.Position = UDim2.new(0, 8, 0, 84)
+AntiSitBtn.Size = UDim2.new(1, -16, 0, 30)
+AntiSitBtn.Position = UDim2.new(0, 8, 0, 74)
 AntiSitBtn.BackgroundColor3 = currentSettings.AntiSitEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
 AntiSitBtn.BorderSizePixel = 0
 AntiSitBtn.Text = "Anti Sit: " .. (currentSettings.AntiSitEnabled and "ON" or "OFF")
@@ -398,8 +685,8 @@ ASCorner.CornerRadius = UDim.new(0, 6)
 ASCorner.Parent = AntiSitBtn
 
 local AutoCouchBtn = Instance.new("TextButton")
-AutoCouchBtn.Size = UDim2.new(1, -16, 0, 32)
-AutoCouchBtn.Position = UDim2.new(0, 8, 0, 122)
+AutoCouchBtn.Size = UDim2.new(1, -16, 0, 30)
+AutoCouchBtn.Position = UDim2.new(0, 8, 0, 108)
 AutoCouchBtn.BackgroundColor3 = currentSettings.AutoCouchEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
 AutoCouchBtn.BorderSizePixel = 0
 AutoCouchBtn.Text = "Auto Couch: " .. (currentSettings.AutoCouchEnabled and "ON" or "OFF")
@@ -411,6 +698,21 @@ AutoCouchBtn.Parent = SettingsTab
 local ACCorner = Instance.new("UICorner")
 ACCorner.CornerRadius = UDim.new(0, 6)
 ACCorner.Parent = AutoCouchBtn
+
+local BringPartsBtn = Instance.new("TextButton")
+BringPartsBtn.Size = UDim2.new(1, -16, 0, 30)
+BringPartsBtn.Position = UDim2.new(0, 8, 0, 142)
+BringPartsBtn.BackgroundColor3 = currentSettings.BringPartsEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+BringPartsBtn.BorderSizePixel = 0
+BringPartsBtn.Text = "Bring Parts: " .. (currentSettings.BringPartsEnabled and "ON" or "OFF")
+BringPartsBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+BringPartsBtn.Font = Enum.Font.SourceSansBold
+BringPartsBtn.TextSize = 13
+BringPartsBtn.Parent = SettingsTab
+
+local BPCorner = Instance.new("UICorner")
+BPCorner.CornerRadius = UDim.new(0, 6)
+BPCorner.Parent = BringPartsBtn
 
 -- Rodapé
 local CreditsLabel = Instance.new("TextLabel")
@@ -463,6 +765,24 @@ AutoCouchBtn.MouseButton1Click:Connect(function()
     
     if currentSettings.AutoCouchEnabled then
         getCouch()
+    end
+    saveSettings()
+end)
+
+BringPartsBtn.MouseButton1Click:Connect(function()
+    currentSettings.BringPartsEnabled = not currentSettings.BringPartsEnabled
+    BringPartsBtn.BackgroundColor3 = currentSettings.BringPartsEnabled and Color3.fromRGB(0, 150, 80) or Color3.fromRGB(150, 40, 40)
+    BringPartsBtn.Text = "Bring Parts: " .. (currentSettings.BringPartsEnabled and "ON" or "OFF")
+
+    if currentSettings.BringPartsEnabled then
+        spawnBringPartsGui(function()
+            currentSettings.BringPartsEnabled = false
+            BringPartsBtn.BackgroundColor3 = Color3.fromRGB(150, 40, 40)
+            BringPartsBtn.Text = "Bring Parts: OFF"
+            saveSettings()
+        end)
+    else
+        destroyBringPartsGui()
     end
     saveSettings()
 end)
@@ -535,7 +855,6 @@ local function refreshPlayerList()
             btnCorner.CornerRadius = UDim.new(0, 4)
             btnCorner.Parent = pBtn
 
-            -- Quadrado da Foto Maior (32x32)
             local AvatarBox = Instance.new("ImageLabel")
             AvatarBox.Name = "AvatarBox"
             AvatarBox.Size = UDim2.new(0, 32, 0, 32)
@@ -548,7 +867,6 @@ local function refreshPlayerList()
             avatarCorner.CornerRadius = UDim.new(0, 4)
             avatarCorner.Parent = AvatarBox
 
-            -- Nome do Jogador Maior (TextSize 15 + Bold)
             local NameLabel = Instance.new("TextLabel")
             NameLabel.Name = "NameLabel"
             NameLabel.Size = UDim2.new(1, -44, 1, 0)
@@ -596,9 +914,18 @@ Players.PlayerAdded:Connect(refreshPlayerList)
 Players.PlayerRemoving:Connect(refreshPlayerList)
 refreshPlayerList()
 
--- Execução do Auto Couch
+-- Inicializações
 if currentSettings.AutoCouchEnabled then
     getCouch()
+end
+
+if currentSettings.BringPartsEnabled then
+    spawnBringPartsGui(function()
+        currentSettings.BringPartsEnabled = false
+        BringPartsBtn.BackgroundColor3 = Color3.fromRGB(150, 40, 40)
+        BringPartsBtn.Text = "Bring Parts: OFF"
+        saveSettings()
+    end)
 end
 
 -- Botão Fling Principal
