@@ -43,6 +43,7 @@ local isFlingingActive = false
 local selectedTargetPlayer = nil
 local isSpectating = false
 local bringPartsGuiInstance = nil
+local spectateConnection = nil
 
 -- Bypass ReplicatedStorage
 pcall(function()
@@ -66,7 +67,7 @@ local function getCouch()
     end)
 end
 
--- Função Bring Parts (Com o seu código original exato + Botão X)
+-- ====================== BRING PARTS (novo script + View + X) ======================
 local function destroyBringPartsGui()
     if bringPartsGuiInstance then
         bringPartsGuiInstance:Destroy()
@@ -79,183 +80,122 @@ local function spawnBringPartsGui(onCloseCallback)
 
     local Gui = Instance.new("ScreenGui")
     local Main = Instance.new("Frame")
-    local UICorner_Main = Instance.new("UICorner")
-    local Label = Instance.new("TextLabel")
-    local UICorner_Label = Instance.new("UICorner")
-    local UITextSizeConstraint_Label = Instance.new("UITextSizeConstraint")
-    local Controls = Instance.new("Frame")
     local Box = Instance.new("TextBox")
-    local UICorner_Box = Instance.new("UICorner")
-    local UITextSizeConstraint_Box = Instance.new("UITextSizeConstraint")
-    local TargetButton = Instance.new("TextButton")
-    local UICorner_Target = Instance.new("UICorner")
-    local UITextSizeConstraint_Target = Instance.new("UITextSizeConstraint")
-    local SpectateButton = Instance.new("TextButton")
-    local UICorner_Spectate = Instance.new("UICorner")
-    local UITextSizeConstraint_Spectate = Instance.new("UITextSizeConstraint")
-    local BringButton = Instance.new("TextButton")
-    local UICorner_Bring = Instance.new("UICorner")
-    local UITextSizeConstraint_Bring = Instance.new("UITextSizeConstraint")
-    local StatusLabel = Instance.new("TextLabel")
-    local UICorner_Status = Instance.new("UICorner")
-    
-    -- Botão X de Fechar adicionado
+    local UITextSizeConstraint = Instance.new("UITextSizeConstraint")
+    local Label = Instance.new("TextLabel")
+    local UITextSizeConstraint_2 = Instance.new("UITextSizeConstraint")
+    local Button = Instance.new("TextButton")
+    local UITextSizeConstraint_3 = Instance.new("UITextSizeConstraint")
+    local ViewBtn = Instance.new("TextButton")
+    local UITextSizeConstraint_4 = Instance.new("UITextSizeConstraint")
     local CloseXBtn = Instance.new("TextButton")
 
     Gui.Name = "Gui"
-    Gui.Parent = gethui() or Players.LocalPlayer:WaitForChild("PlayerGui")
+    Gui.Parent = gethui() or LocalPlayer:WaitForChild("PlayerGui")
     Gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     Gui.ResetOnSpawn = false
     bringPartsGuiInstance = Gui
 
     Main.Name = "Main"
     Main.Parent = Gui
-    Main.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-    Main.BackgroundTransparency = 0.1
+    Main.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
+    Main.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Main.BorderSizePixel = 0
-    Main.Position = UDim2.new(0.3, 0, 0.4, 0)
-    Main.Size = UDim2.new(0.3, 0, 0.3, 0)
+    Main.Position = UDim2.new(0.335954279, 0, 0.542361975, 0)
+    Main.Size = UDim2.new(0.240350261, 0, 0.166880623, 0)
     Main.Active = true
     Main.Draggable = true
-    UICorner_Main.CornerRadius = UDim.new(0, 20)
-    UICorner_Main.Parent = Main
+
+    Box.Name = "Box"
+    Box.Parent = Main
+    Box.BackgroundColor3 = Color3.fromRGB(95, 95, 95)
+    Box.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Box.BorderSizePixel = 0
+    Box.Position = UDim2.new(0.0980926454, 0, 0.218712583, 0)
+    Box.Size = UDim2.new(0.801089942, 0, 0.364963502, 0)
+    Box.FontFace = Font.new("rbxasset://fonts/families/SourceSansSemibold.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    Box.PlaceholderText = "Player here"
+    Box.Text = ""
+    Box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Box.TextScaled = true
+    Box.TextSize = 31
+    Box.TextWrapped = true
+
+    UITextSizeConstraint.Parent = Box
+    UITextSizeConstraint.MaxTextSize = 31
 
     Label.Name = "Label"
     Label.Parent = Main
-    Label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Label.BackgroundTransparency = 0.2
+    Label.BackgroundColor3 = Color3.fromRGB(95, 95, 95)
+    Label.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Label.BorderSizePixel = 0
-    Label.Size = UDim2.new(1, 0, 0.18, 0)
-    Label.Font = Enum.Font.Code
-    Label.Text = "Bring Parts / By Dracosw"
-    Label.TextColor3 = Color3.fromRGB(220, 220, 220)
+    Label.Size = UDim2.new(1, 0, 0.160583943, 0)
+    Label.FontFace = Font.new("rbxasset://fonts/families/Nunito.json", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+    Label.Text = "Bring Parts | YT Dracoswor1"
+    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
     Label.TextScaled = true
     Label.TextSize = 14
     Label.TextWrapped = true
-    UICorner_Label.CornerRadius = UDim.new(0, 12)
-    UICorner_Label.Parent = Label
-    UITextSizeConstraint_Label.Parent = Label
-    UITextSizeConstraint_Label.MaxTextSize = 24
 
-    -- Configuração do Botão X
+    UITextSizeConstraint_2.Parent = Label
+    UITextSizeConstraint_2.MaxTextSize = 21
+
+    -- Botão Bring (lado esquerdo)
+    Button.Name = "Button"
+    Button.Parent = Main
+    Button.BackgroundColor3 = Color3.fromRGB(95, 95, 95)
+    Button.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    Button.BorderSizePixel = 0
+    Button.Position = UDim2.new(0.05, 0, 0.656760991, 0)
+    Button.Size = UDim2.new(0.42, 0, 0.277372271, 0)
+    Button.Font = Enum.Font.Nunito
+    Button.Text = "Bring | Off"
+    Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Button.TextScaled = true
+    Button.TextSize = 28
+    Button.TextWrapped = true
+
+    UITextSizeConstraint_3.Parent = Button
+    UITextSizeConstraint_3.MaxTextSize = 28
+
+    -- Botão View (lado direito - menor que a metade)
+    ViewBtn.Name = "ViewBtn"
+    ViewBtn.Parent = Main
+    ViewBtn.BackgroundColor3 = Color3.fromRGB(95, 95, 95)
+    ViewBtn.BorderColor3 = Color3.fromRGB(0, 0, 0)
+    ViewBtn.BorderSizePixel = 0
+    ViewBtn.Position = UDim2.new(0.53, 0, 0.656760991, 0)
+    ViewBtn.Size = UDim2.new(0.42, 0, 0.277372271, 0)
+    ViewBtn.Font = Enum.Font.Nunito
+    ViewBtn.Text = "View"
+    ViewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    ViewBtn.TextScaled = true
+    ViewBtn.TextSize = 28
+    ViewBtn.TextWrapped = true
+
+    UITextSizeConstraint_4.Parent = ViewBtn
+    UITextSizeConstraint_4.MaxTextSize = 28
+
+    -- Botão X
     CloseXBtn.Name = "CloseXBtn"
     CloseXBtn.Parent = Main
     CloseXBtn.BackgroundTransparency = 1
-    CloseXBtn.Position = UDim2.new(1, -28, 0, 4)
-    CloseXBtn.Size = UDim2.new(0, 24, 0, 24)
+    CloseXBtn.Position = UDim2.new(1, -22, 0, 2)
+    CloseXBtn.Size = UDim2.new(0, 20, 0, 20)
     CloseXBtn.Font = Enum.Font.SourceSansBold
     CloseXBtn.Text = "X"
     CloseXBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
     CloseXBtn.TextSize = 16
     CloseXBtn.ZIndex = 5
 
-    Controls.Name = "Controls"
-    Controls.Parent = Main
-    Controls.BackgroundTransparency = 1
-    Controls.Position = UDim2.new(0, 0, 0.18, 0)
-    Controls.Size = UDim2.new(1, 0, 0.32, 0)
-
-    Box.Name = "Box"
-    Box.Parent = Controls
-    Box.BackgroundColor3 = Color3.fromRGB(38, 38, 38)
-    Box.BackgroundTransparency = 0.1
-    Box.BorderSizePixel = 0
-    Box.Position = UDim2.new(0.05, 0, 0.15, 0)
-    Box.Size = UDim2.new(0.55, 0, 0.7, 0)
-    Box.Font = Enum.Font.Code
-    Box.PlaceholderText = "Player name"
-    Box.Text = ""
-    Box.TextColor3 = Color3.fromRGB(220, 220, 220)
-    Box.TextScaled = true
-    Box.TextSize = 35
-    Box.TextWrapped = true
-    Box.ClearTextOnFocus = false
-    UICorner_Box.CornerRadius = UDim.new(0, 12)
-    UICorner_Box.Parent = Box
-    UITextSizeConstraint_Box.Parent = Box
-    UITextSizeConstraint_Box.MaxTextSize = 35
-
-    TargetButton.Name = "TargetButton"
-    TargetButton.Parent = Controls
-    TargetButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    TargetButton.BackgroundTransparency = 0.1
-    TargetButton.BorderSizePixel = 0
-    TargetButton.Position = UDim2.new(0.65, 0, 0.15, 0)
-    TargetButton.Size = UDim2.new(0.3, 0, 0.7, 0)
-    TargetButton.Font = Enum.Font.Code
-    TargetButton.Text = "Players"
-    TargetButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-    TargetButton.TextScaled = true
-    TargetButton.TextSize = 24
-    TargetButton.TextWrapped = true
-    UICorner_Target.CornerRadius = UDim.new(0, 12)
-    UICorner_Target.Parent = TargetButton
-    UITextSizeConstraint_Target.Parent = TargetButton
-    UITextSizeConstraint_Target.MaxTextSize = 24
-
-    SpectateButton.Name = "SpectateButton"
-    SpectateButton.Parent = Main
-    SpectateButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    SpectateButton.BackgroundTransparency = 0.1
-    SpectateButton.BorderSizePixel = 0
-    SpectateButton.Position = UDim2.new(0.05, 0, 0.55, 0)
-    SpectateButton.Size = UDim2.new(0.4, 0, 0.18, 0)
-    SpectateButton.Font = Enum.Font.Code
-    SpectateButton.Text = "Spectate: Off"
-    SpectateButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-    SpectateButton.TextScaled = true
-    SpectateButton.TextSize = 24
-    SpectateButton.TextWrapped = true
-    UICorner_Spectate.CornerRadius = UDim.new(0, 12)
-    UICorner_Spectate.Parent = SpectateButton
-    UITextSizeConstraint_Spectate.Parent = SpectateButton
-    UITextSizeConstraint_Spectate.MaxTextSize = 24
-
-    BringButton.Name = "BringButton"
-    BringButton.Parent = Main
-    BringButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    BringButton.BackgroundTransparency = 0.1
-    BringButton.BorderSizePixel = 0
-    BringButton.Position = UDim2.new(0.55, 0, 0.55, 0)
-    BringButton.Size = UDim2.new(0.4, 0, 0.18, 0)
-    BringButton.Font = Enum.Font.Code
-    BringButton.Text = "Bring: Off"
-    BringButton.TextColor3 = Color3.fromRGB(220, 220, 220)
-    BringButton.TextScaled = true
-    BringButton.TextSize = 28
-    BringButton.TextWrapped = true
-    UICorner_Bring.CornerRadius = UDim.new(0, 12)
-    UICorner_Bring.Parent = BringButton
-    UITextSizeConstraint_Bring.Parent = BringButton
-    UITextSizeConstraint_Bring.MaxTextSize = 28
-
-    StatusLabel.Name = "StatusLabel"
-    StatusLabel.Parent = Main
-    StatusLabel.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    StatusLabel.BackgroundTransparency = 0.15
-    StatusLabel.BorderSizePixel = 0
-    StatusLabel.Position = UDim2.new(0.1, 0, 0.78, 0)
-    StatusLabel.Size = UDim2.new(0.8, 0, 0.15, 0)
-    StatusLabel.Font = Enum.Font.Code
-    StatusLabel.Text = "Target: None"
-    StatusLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
-    StatusLabel.TextScaled = true
-    StatusLabel.TextSize = 20
-    StatusLabel.TextWrapped = true
-    UICorner_Status.CornerRadius = UDim.new(0, 10)
-    UICorner_Status.Parent = StatusLabel
-
-    local targetMode = "Players"
-    local spectateActive = false
+    -- Lógica
+    local character
+    local humanoidRootPart
+    local player = nil
     local blackHoleActive = false
-    local currentTarget = nil
-    local cycleIndex = 1
-    local cycleConnection = nil
-    local spectateMonitorConnection = nil
+    local isViewing = false
     local DescendantAddedConnection
     local originalCameraSubject = nil
-    local originalCameraType = nil
-    local character, humanoidRootPart
 
     local Folder = Instance.new("Folder", Workspace)
     local Part = Instance.new("Part", Folder)
@@ -263,47 +203,52 @@ local function spawnBringPartsGui(onCloseCallback)
     Part.Anchored = true
     Part.CanCollide = false
     Part.Transparency = 1
-    local controlledParts = {}
 
     if not getgenv().Network then
         getgenv().Network = {
             BaseParts = {},
             Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
         }
-        Network.RetainPart = function(p)
-            if p:IsA("BasePart") and p:IsDescendantOf(Workspace) then
-                table.insert(Network.BaseParts, p)
-                p.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
-                p.CanCollide = false
+
+        Network.RetainPart = function(Part)
+            if Part:IsA("BasePart") and Part:IsDescendantOf(Workspace) then
+                table.insert(Network.BaseParts, Part)
+                Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+                Part.CanCollide = false
             end
         end
+
         local function EnablePartControl()
             LocalPlayer.ReplicationFocus = Workspace
             RunService.Heartbeat:Connect(function()
                 sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-                for _, p in pairs(Network.BaseParts) do
-                    if p:IsDescendantOf(Workspace) then
-                        p.Velocity = Network.Velocity
+                for _, Part in pairs(Network.BaseParts) do
+                    if Part:IsDescendantOf(Workspace) then
+                        Part.Velocity = Network.Velocity
                     end
                 end
             end)
         end
+
         EnablePartControl()
     end
 
     local function ForcePart(v)
-        if v:IsA("BasePart") and not v.Anchored
-            and not v.Parent:FindFirstChildOfClass("Humanoid")
-            and not v.Parent:FindFirstChild("Head")
-            and v.Name ~= "Handle" then
+        if v:IsA("BasePart") and not v.Anchored and not v.Parent:FindFirstChildOfClass("Humanoid") and not v.Parent:FindFirstChild("Head") and v.Name ~= "Handle" then
             for _, x in ipairs(v:GetChildren()) do
                 if x:IsA("BodyMover") or x:IsA("RocketPropulsion") then
                     x:Destroy()
                 end
             end
-            if v:FindFirstChild("Attachment") then v:FindFirstChild("Attachment"):Destroy() end
-            if v:FindFirstChild("AlignPosition") then v:FindFirstChild("AlignPosition"):Destroy() end
-            if v:FindFirstChild("Torque") then v:FindFirstChild("Torque"):Destroy() end
+            if v:FindFirstChild("Attachment") then
+                v:FindFirstChild("Attachment"):Destroy()
+            end
+            if v:FindFirstChild("AlignPosition") then
+                v:FindFirstChild("AlignPosition"):Destroy()
+            end
+            if v:FindFirstChild("Torque") then
+                v:FindFirstChild("Torque"):Destroy()
+            end
             v.CanCollide = false
             local Torque = Instance.new("Torque", v)
             Torque.Torque = Vector3.new(100000, 100000, 100000)
@@ -315,398 +260,158 @@ local function spawnBringPartsGui(onCloseCallback)
             AlignPosition.Responsiveness = 200
             AlignPosition.Attachment0 = Attachment2
             AlignPosition.Attachment1 = Attachment1
-            controlledParts[v] = true
-        end
-    end
-
-    local function releaseParts()
-        for part in pairs(controlledParts) do
-            if part and part.Parent then
-                local align = part:FindFirstChild("AlignPosition")
-                if align then align:Destroy() end
-                local torque = part:FindFirstChild("Torque")
-                if torque then torque:Destroy() end
-                local att = part:FindFirstChild("Attachment")
-                if att then att:Destroy() end
-                part.CanCollide = true
-                part.CustomPhysicalProperties = nil
-            end
-        end
-        controlledParts = {}
-    end
-
-    local function clear()
-        spawn(function()
-            while not blackHoleActive do
-                task.wait(0.5)
-                for part in pairs(controlledParts) do
-                    if part and part.Parent and part.Position.Y < 200 then
-                        part:Destroy()
-                        controlledParts[part] = nil
-                    end
-                end
-            end
-        end)
-    end
-
-    local function getPlayer(name)
-        local lowerName = string.lower(name)
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer then
-                local lowerPlayer = string.lower(p.Name)
-                if string.find(lowerPlayer, lowerName) then
-                    return p
-                elseif string.find(string.lower(p.DisplayName), lowerName) then
-                    return p
-                end
-            end
-        end
-    end
-
-    local function validplr()
-        local valid = {}
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                table.insert(valid, p)
-            end
-        end
-        return valid
-    end
-
-    local function isTargetValid(target)
-        return target and target.Character and target.Character:FindFirstChildOfClass("Humanoid") and
-               target.Character.Humanoid.Health > 0
-    end
-
-    local function updateTarget()
-        if targetMode == "Players" then
-            currentTarget = getPlayer(Box.Text)
-        else
-            local players = validplr()
-            if #players > 0 then
-                cycleIndex = (cycleIndex % #players) + 1
-                currentTarget = players[cycleIndex]
-            else
-                currentTarget = nil
-            end
-        end
-        if currentTarget then
-            StatusLabel.Text = "Target: " .. currentTarget.Name
-        else
-            StatusLabel.Text = "Target: None"
-        end
-        if spectateActive then
-            if isTargetValid(currentTarget) then
-                view()
-            else
-                noview()
-                spectateActive = false
-                SpectateButton.Text = "Spectate: Off"
-            end
-        end
-        return currentTarget
-    end
-
-    local function cframe()
-        if currentTarget and currentTarget.Character and currentTarget.Character:FindFirstChild("HumanoidRootPart") then
-            return currentTarget.Character.HumanoidRootPart.CFrame
-        end
-        return nil
-    end
-
-    local function allthing()
-        if cycleConnection then cycleConnection:Disconnect() end
-        cycleConnection = RunService.Heartbeat:Connect(function()
-            if targetMode == "All" and blackHoleActive then
-                if tick() % 3 < 0.1 then
-                    updateTarget()
-                end
-            end
-        end)
-    end
-
-    local function view()
-        if not currentTarget or not isTargetValid(currentTarget) then
-            if spectateActive then
-                spectateActive = false
-                SpectateButton.Text = "Spectate: Off"
-                noview()
-            end
-            return
-        end
-        local char = currentTarget.Character
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if not humanoid then return end
-        if not originalCameraType then
-            originalCameraType = Camera.CameraType
-            originalCameraSubject = Camera.CameraSubject
-        end
-        Camera.CameraType = Enum.CameraType.Custom
-        Camera.CameraSubject = humanoid
-    end
-
-    local function noview()
-        if originalCameraType and originalCameraSubject then
-            Camera.CameraType = originalCameraType
-            Camera.CameraSubject = originalCameraSubject
-        else
-            Camera.CameraType = Enum.CameraType.Custom
-            Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        end
-        originalCameraType = nil
-        originalCameraSubject = nil
-    end
-
-    local function startSpectateMonitoring()
-        if spectateMonitorConnection then
-            spectateMonitorConnection:Disconnect()
-        end
-        spectateMonitorConnection = RunService.Heartbeat:Connect(function()
-            if not spectateActive then
-                if spectateMonitorConnection then
-                    spectateMonitorConnection:Disconnect()
-                    spectateMonitorConnection = nil
-                end
-                return
-            end
-            if not isTargetValid(currentTarget) then
-                if targetMode == "All" then
-                    local newTarget = updateTarget()
-                    if newTarget and isTargetValid(newTarget) then
-                        view()
-                    else
-                        noview()
-                        spectateActive = false
-                        SpectateButton.Text = "Spectate: Off"
-                    end
-                else
-                    noview()
-                    if currentTarget then
-                        currentTarget.CharacterAdded:Connect(function()
-                            if spectateActive and currentTarget == currentTarget then
-                                task.wait(0.5)
-                                if spectateActive and isTargetValid(currentTarget) then
-                                    view()
-                                end
-                            end
-                        end)
-                    else
-                        spectateActive = false
-                        SpectateButton.Text = "Spectate: Off"
-                    end
-                end
-            else
-                if Camera.CameraSubject ~= currentTarget.Character:FindFirstChildOfClass("Humanoid") then
-                    view()
-                end
-            end
-        end)
-    end
-
-    local function togview()
-        if not currentTarget then
-            print("No target to spectate")
-            return
-        end
-        spectateActive = not spectateActive
-        SpectateButton.Text = spectateActive and "Spectate: On" or "Spectate: Off"
-        if spectateActive then
-            if isTargetValid(currentTarget) then
-                view()
-                startSpectateMonitoring()
-            else
-                print("Target is not valid (dead or no character)")
-                spectateActive = false
-                SpectateButton.Text = "Spectate: Off"
-            end
-        else
-            noview()
-            if spectateMonitorConnection then
-                spectateMonitorConnection:Disconnect()
-                spectateMonitorConnection = nil
-            end
         end
     end
 
     local function toggleBlackHole()
         blackHoleActive = not blackHoleActive
         if blackHoleActive then
-            BringButton.Text = "Bring: On"
-            updateTarget()
-            if not currentTarget then
-                blackHoleActive = false
-                BringButton.Text = "Bring: Off"
-                print("No valid target")
-                return
-            end
+            Button.Text = "Bring | On"
             for _, v in ipairs(Workspace:GetDescendants()) do
                 ForcePart(v)
             end
+
             DescendantAddedConnection = Workspace.DescendantAdded:Connect(function(v)
                 if blackHoleActive then
                     ForcePart(v)
                 end
             end)
-            if targetMode == "All" then
-                allthing()
-            end
+
             spawn(function()
                 while blackHoleActive and RunService.RenderStepped:Wait() do
-                    local cf = cframe()
-                    if cf then
-                        Attachment1.WorldCFrame = cf
+                    if humanoidRootPart then
+                        Attachment1.WorldCFrame = humanoidRootPart.CFrame
                     end
                 end
             end)
         else
-            BringButton.Text = "Bring: Off"
-            releaseParts()
-            clear()
+            Button.Text = "Bring | Off"
             if DescendantAddedConnection then
                 DescendantAddedConnection:Disconnect()
                 DescendantAddedConnection = nil
             end
-            if cycleConnection then
-                cycleConnection:Disconnect()
-                cycleConnection = nil
-            end
-            if spectateActive then
-                togview()
+        end
+    end
+
+    local function getPlayer(name)
+        local lowerName = string.lower(name)
+        for _, p in pairs(Players:GetPlayers()) do
+            local lowerPlayer = string.lower(p.Name)
+            if string.find(lowerPlayer, lowerName) then
+                return p
+            elseif string.find(string.lower(p.DisplayName), lowerName) then
+                return p
             end
         end
     end
 
-    local function fadeBox(show)
-        local targetTransparency = show and 0.1 or 1
-        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local goals = {
-            BackgroundTransparency = targetTransparency,
-            TextTransparency = show and 0 or 1
-        }
-        local tween = TweenService:Create(Box, tweenInfo, goals)
-        tween:Play()
-        Box.Active = show
-        Box.Selectable = show
-    end
-
-    local function targetmode()
-        local newMode = targetMode == "Players" and "All" or "Players"
-        targetMode = newMode
-        TargetButton.Text = targetMode
-        if targetMode == "Players" then
-            TargetButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    local function stopView()
+        isViewing = false
+        ViewBtn.Text = "View"
+        ViewBtn.BackgroundColor3 = Color3.fromRGB(95, 95, 95)
+        if originalCameraSubject then
+            Camera.CameraSubject = originalCameraSubject
         else
-            TargetButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        end
-        fadeBox(targetMode == "Players")
-        if spectateActive then
-            if targetMode == "All" then
-                updateTarget()
-                startSpectateMonitoring()
-            else
-                startSpectateMonitoring()
+            local myHum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if myHum then
+                Camera.CameraSubject = myHum
             end
         end
-        if blackHoleActive then
-            updateTarget()
-            if targetMode == "All" then
-                allthing()
-            else
-                if cycleConnection then
-                    cycleConnection:Disconnect()
-                    cycleConnection = nil
-                end
-            end
-        end
+        originalCameraSubject = nil
     end
 
-    TargetButton.MouseButton1Click:Connect(targetmode)
-    SpectateButton.MouseButton1Click:Connect(togview)
-    BringButton.MouseButton1Click:Connect(function()
-        if targetMode == "Players" then
-            local player = getPlayer(Box.Text)
-            if player then
-                character = player.Character or player.CharacterAdded:Wait(5)
-                if character then
-                    humanoidRootPart = character:WaitForChild("HumanoidRootPart", 5)
-                    if humanoidRootPart then
-                        currentTarget = player
-                        toggleBlackHole()
-                    else
-                        print("Player has no HumanoidRootPart")
+    local function startView()
+        if not player then
+            ViewBtn.Text = "No Player"
+            task.wait(0.8)
+            ViewBtn.Text = "View"
+            return
+        end
+
+        local char = player.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if not hum then
+            ViewBtn.Text = "No Char"
+            task.wait(0.8)
+            ViewBtn.Text = "View"
+            return
+        end
+
+        if not isViewing then
+            isViewing = true
+            originalCameraSubject = Camera.CameraSubject
+            Camera.CameraSubject = hum
+            ViewBtn.Text = "Unview"
+            ViewBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+
+            -- Re-attach se o player resetar
+            player.CharacterAdded:Connect(function(newChar)
+                if isViewing and player then
+                    task.wait(0.5)
+                    local newHum = newChar:FindFirstChildOfClass("Humanoid")
+                    if newHum and isViewing then
+                        Camera.CameraSubject = newHum
                     end
-                else
-                    print("Player character not found")
                 end
-            else
-                print("Player not selected or not found")
-            end
+            end)
         else
-            local players = validplr()
-            if #players > 0 then
-                cycleIndex = 1
-                currentTarget = players[1]
-                toggleBlackHole()
-            else
-                print("No valid players found")
-            end
+            stopView()
+        end
+    end
+
+    -- RightControl para esconder/mostrar
+    local mainStatus = true
+    UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+        if input.KeyCode == Enum.KeyCode.RightControl and not gameProcessedEvent then
+            mainStatus = not mainStatus
+            Main.Visible = mainStatus
         end
     end)
 
+    -- Box
     Box.FocusLost:Connect(function(enterPressed)
         if enterPressed then
-            local player = getPlayer(Box.Text)
+            player = getPlayer(Box.Text)
             if player then
                 Box.Text = player.Name
                 print("Player found:", player.Name)
-                if not blackHoleActive then
-                    currentTarget = player
-                    StatusLabel.Text = "Target: " .. player.Name
-                end
             else
                 print("Player not found")
             end
         end
     end)
 
-    local guiVisible = true
-    UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-        if input.KeyCode == Enum.KeyCode.RightControl and not gameProcessedEvent then
-            guiVisible = not guiVisible
-            local targetTransparency = guiVisible and 0.1 or 1
-            local tween = TweenService:Create(Main, TweenInfo.new(0.3), {
-                BackgroundTransparency = targetTransparency
-            })
-            tween:Play()
-            for _, child in ipairs(Main:GetChildren()) do
-                if child:IsA("TextButton") or child:IsA("TextBox") or child:IsA("TextLabel") then
-                    local childTween = TweenService:Create(child, TweenInfo.new(0.3), {
-                        BackgroundTransparency = targetTransparency,
-                        TextTransparency = guiVisible and 0 or 1
-                    })
-                    childTween:Play()
-                end
-            end
-            Main.Active = guiVisible
-            Main.Draggable = guiVisible
+    -- Botão Bring
+    Button.MouseButton1Click:Connect(function()
+        if player then
+            character = player.Character or player.CharacterAdded:Wait()
+            humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+            toggleBlackHole()
+        else
+            print("Player is not selected")
         end
     end)
 
-    -- Ação do botão X para fechar a interface
+    -- Botão View
+    ViewBtn.MouseButton1Click:Connect(startView)
+
+    -- Botão X
     CloseXBtn.MouseButton1Click:Connect(function()
-        if blackHoleActive then toggleBlackHole() end
-        if spectateActive then noview() end
-        if DescendantAddedConnection then DescendantAddedConnection:Disconnect() end
-        if cycleConnection then cycleConnection:Disconnect() end
-        if spectateMonitorConnection then spectateMonitorConnection:Disconnect() end
-        releaseParts()
+        if blackHoleActive then
+            toggleBlackHole()
+        end
+        if isViewing then
+            stopView()
+        end
+        if DescendantAddedConnection then
+            DescendantAddedConnection:Disconnect()
+        end
         Folder:Destroy()
         destroyBringPartsGui()
-        if onCloseCallback then onCloseCallback() end
+        if onCloseCallback then
+            onCloseCallback()
+        end
     end)
-
-    fadeBox(true)
-    StatusLabel.Text = "Target: None"
 end
 
 -- Motor Touch Fling
@@ -781,7 +486,7 @@ local function flingPlayer(TargetPlayer)
     local Handle = Accessory and Accessory:FindFirstChild("Handle")
 
     if Character and Humanoid and RootPart then
-        if RootPart.Velocity.Magnitude < 50 then
+        if not getgenv().OldPos then
             getgenv().OldPos = RootPart.CFrame
         end
         
@@ -809,20 +514,28 @@ local function flingPlayer(TargetPlayer)
         local function SFBasePart(BasePart)
             local Time = tick()
             local Angle = 0
+            local useForward = true
 
             repeat
                 if not isFlingingActive then break end
                 if RootPart and THumanoid then
                     if BasePart.Velocity.Magnitude < 50 then
                         Angle = Angle + 100
-                        FPos(BasePart, CFrame.new(0, 1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
+
+                        local forwardOffset = useForward 
+                            and (THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25) 
+                            or Vector3.new(0, 0, 0)
+
+                        FPos(BasePart, CFrame.new(0, 1.5, 0) + forwardOffset, CFrame.Angles(math.rad(Angle), 0, 0))
                         task.wait()
-                        FPos(BasePart, CFrame.new(0, -1.5, 0) + THumanoid.MoveDirection * BasePart.Velocity.Magnitude / 1.25, CFrame.Angles(math.rad(Angle), 0, 0))
+                        FPos(BasePart, CFrame.new(0, -1.5, 0) + forwardOffset, CFrame.Angles(math.rad(Angle), 0, 0))
                         task.wait()
+
+                        useForward = not useForward
                     else
                         FPos(BasePart, CFrame.new(0, 1.5, THumanoid.WalkSpeed), CFrame.Angles(math.rad(90), 0, 0))
                         task.wait()
-                        FPos(BasePart, CFrame.new(0, -1.5, -THumanoid.WalkSpeed), CFrame.Angles(0, 0, 0))
+                        FPos(BasePart, CFrame.new(0, -1.5, 0), CFrame.Angles(0, 0, 0))
                         task.wait()
                     end
                 else
@@ -863,9 +576,11 @@ local function flingPlayer(TargetPlayer)
                 Character:SetPrimaryPartCFrame(getgenv().OldPos)
                 RootPart.Velocity = Vector3.new(0, 0, 0)
                 RootPart.RotVelocity = Vector3.new(0, 0, 0)
-                Humanoid:ChangeState("GettingUp")
+                Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
                 task.wait()
-            until (RootPart.Position - getgenv().OldPos.p).Magnitude < 3 or not isFlingingActive or (tick() - startTime > 1)
+            until (RootPart.Position - getgenv().OldPos.Position).Magnitude < 2 or (tick() - startTime > 1.5)
+            
+            getgenv().OldPos = nil
         end
 
         for _, x in pairs(Character:GetChildren()) do
@@ -903,7 +618,6 @@ local UICorner = Instance.new("UICorner")
 UICorner.CornerRadius = UDim.new(0, 8)
 UICorner.Parent = MainFrame
 
--- Borda Vermelho e Branco Brilhoso
 local UIStroke = Instance.new("UIStroke")
 UIStroke.Thickness = 2
 UIStroke.Parent = MainFrame
@@ -927,7 +641,6 @@ TitleLabel.TextSize = 15
 TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
 TitleLabel.Parent = MainFrame
 
--- Botão Engrenagem
 local SettingsBtn = Instance.new("TextButton")
 SettingsBtn.Size = UDim2.new(0, 28, 0, 28)
 SettingsBtn.Position = UDim2.new(1, -30, 0, 0)
@@ -936,7 +649,6 @@ SettingsBtn.Text = "⚙️"
 SettingsBtn.TextSize = 15
 SettingsBtn.Parent = MainFrame
 
--- ABA 1: Jogadores
 local MainTab = Instance.new("Frame")
 MainTab.Size = UDim2.new(1, 0, 1, -28)
 MainTab.Position = UDim2.new(0, 0, 0, 28)
@@ -960,7 +672,6 @@ local UIListLayout = Instance.new("UIListLayout")
 UIListLayout.Parent = PlayerScroll
 UIListLayout.Padding = UDim.new(0, 4)
 
--- Botão Fling Principal
 local FlingButton = Instance.new("TextButton")
 FlingButton.Size = UDim2.new(0.68, -8, 0, 32)
 FlingButton.Position = UDim2.new(0, 8, 0, 205)
@@ -976,7 +687,6 @@ local FlingBtnCorner = Instance.new("UICorner")
 FlingBtnCorner.CornerRadius = UDim.new(0, 6)
 FlingBtnCorner.Parent = FlingButton
 
--- Botão View / Unview
 local ViewButton = Instance.new("TextButton")
 ViewButton.Size = UDim2.new(0.32, -8, 0, 32)
 ViewButton.Position = UDim2.new(0.68, 4, 0, 205)
@@ -992,7 +702,6 @@ local ViewBtnCorner = Instance.new("UICorner")
 ViewBtnCorner.CornerRadius = UDim.new(0, 6)
 ViewBtnCorner.Parent = ViewButton
 
--- ABA 2: Configurações
 local SettingsTab = Instance.new("Frame")
 SettingsTab.Size = UDim2.new(1, 0, 1, -28)
 SettingsTab.Position = UDim2.new(0, 0, 0, 28)
@@ -1075,7 +784,6 @@ local BPCorner = Instance.new("UICorner")
 BPCorner.CornerRadius = UDim.new(0, 6)
 BPCorner.Parent = BringPartsBtn
 
--- Rodapé
 local CreditsLabel = Instance.new("TextLabel")
 CreditsLabel.Size = UDim2.new(1, 0, 0, 18)
 CreditsLabel.Position = UDim2.new(0, 0, 1, -18)
@@ -1086,7 +794,6 @@ CreditsLabel.Font = Enum.Font.SourceSansItalic
 CreditsLabel.TextSize = 11
 CreditsLabel.Parent = MainFrame
 
--- Troca de Aba
 local isSettingsOpen = false
 SettingsBtn.MouseButton1Click:Connect(function()
     isSettingsOpen = not isSettingsOpen
@@ -1148,15 +855,40 @@ BringPartsBtn.MouseButton1Click:Connect(function()
     saveSettings()
 end)
 
--- Sistema de Espectar (View / Unview)
+-- Sistema de Espectar (View / Unview) do Fling principal
 local function stopSpectating()
     isSpectating = false
     ViewButton.Text = "View"
     ViewButton.BackgroundColor3 = Color3.fromRGB(60, 60, 75)
+    
+    if spectateConnection then
+        spectateConnection:Disconnect()
+        spectateConnection = nil
+    end
+    
     local myHum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
     if myHum then
         workspace.CurrentCamera.CameraSubject = myHum
     end
+end
+
+local function startViewMonitor(player)
+    if spectateConnection then
+        spectateConnection:Disconnect()
+        spectateConnection = nil
+    end
+    
+    if not player then return end
+    
+    spectateConnection = player.CharacterAdded:Connect(function(newChar)
+        if isSpectating and selectedTargetPlayer == player then
+            task.wait(0.6)
+            local newHum = newChar:FindFirstChildOfClass("Humanoid") or newChar:WaitForChild("Humanoid", 3)
+            if newHum and isSpectating and selectedTargetPlayer == player then
+                workspace.CurrentCamera.CameraSubject = newHum
+            end
+        end
+    end)
 end
 
 ViewButton.MouseButton1Click:Connect(function()
@@ -1174,13 +906,13 @@ ViewButton.MouseButton1Click:Connect(function()
             workspace.CurrentCamera.CameraSubject = tHum
             ViewButton.Text = "Unview"
             ViewButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+            startViewMonitor(selectedTargetPlayer)
         end
     else
         stopSpectating()
     end
 end)
 
--- Sistema de Lista Otimizado com Nick e Avatar Maiores
 local playerButtons = {}
 
 local function refreshPlayerList()
@@ -1256,6 +988,7 @@ local function refreshPlayerList()
                     if tHum then
                         workspace.CurrentCamera.CameraSubject = tHum
                     end
+                    startViewMonitor(p)
                 end
                 refreshPlayerList()
             end)
@@ -1275,7 +1008,6 @@ Players.PlayerAdded:Connect(refreshPlayerList)
 Players.PlayerRemoving:Connect(refreshPlayerList)
 refreshPlayerList()
 
--- Inicializações
 if currentSettings.AutoCouchEnabled then
     getCouch()
 end
@@ -1289,7 +1021,6 @@ if currentSettings.BringPartsEnabled then
     end)
 end
 
--- Botão Fling Principal
 FlingButton.MouseButton1Click:Connect(function()
     if not isFlingingActive then
         if not selectedTargetPlayer then
@@ -1302,6 +1033,12 @@ FlingButton.MouseButton1Click:Connect(function()
         isFlingingActive = true
         FlingButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
         FlingButton.Text = "Parar Fling"
+
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            getgenv().OldPos = hrp.CFrame
+        end
 
         task.spawn(function()
             while isFlingingActive and selectedTargetPlayer and selectedTargetPlayer.Parent == Players do
