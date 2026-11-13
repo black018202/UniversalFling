@@ -67,7 +67,7 @@ local function getCouch()
     end)
 end
 
--- ====================== BRING PARTS (novo script + View + X) ======================
+-- ====================== BRING PARTS ======================
 local function destroyBringPartsGui()
     if bringPartsGuiInstance then
         bringPartsGuiInstance:Destroy()
@@ -101,7 +101,8 @@ local function spawnBringPartsGui(onCloseCallback)
     Main.BackgroundColor3 = Color3.fromRGB(75, 75, 75)
     Main.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Main.BorderSizePixel = 0
-    Main.Position = UDim2.new(0.335954279, 0, 0.542361975, 0)
+    -- Posição: Esquerda embaixo
+    Main.Position = UDim2.new(0, 20, 1, -160)
     Main.Size = UDim2.new(0.240350261, 0, 0.166880623, 0)
     Main.Active = true
     Main.Draggable = true
@@ -140,7 +141,6 @@ local function spawnBringPartsGui(onCloseCallback)
     UITextSizeConstraint_2.Parent = Label
     UITextSizeConstraint_2.MaxTextSize = 21
 
-    -- Botão Bring (lado esquerdo)
     Button.Name = "Button"
     Button.Parent = Main
     Button.BackgroundColor3 = Color3.fromRGB(95, 95, 95)
@@ -158,7 +158,6 @@ local function spawnBringPartsGui(onCloseCallback)
     UITextSizeConstraint_3.Parent = Button
     UITextSizeConstraint_3.MaxTextSize = 28
 
-    -- Botão View (lado direito - menor que a metade)
     ViewBtn.Name = "ViewBtn"
     ViewBtn.Parent = Main
     ViewBtn.BackgroundColor3 = Color3.fromRGB(95, 95, 95)
@@ -176,7 +175,6 @@ local function spawnBringPartsGui(onCloseCallback)
     UITextSizeConstraint_4.Parent = ViewBtn
     UITextSizeConstraint_4.MaxTextSize = 28
 
-    -- Botão X
     CloseXBtn.Name = "CloseXBtn"
     CloseXBtn.Parent = Main
     CloseXBtn.BackgroundTransparency = 1
@@ -188,7 +186,6 @@ local function spawnBringPartsGui(onCloseCallback)
     CloseXBtn.TextSize = 16
     CloseXBtn.ZIndex = 5
 
-    -- Lógica
     local character
     local humanoidRootPart
     local player = nil
@@ -344,7 +341,6 @@ local function spawnBringPartsGui(onCloseCallback)
             ViewBtn.Text = "Unview"
             ViewBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
 
-            -- Re-attach se o player resetar
             player.CharacterAdded:Connect(function(newChar)
                 if isViewing and player then
                     task.wait(0.5)
@@ -359,7 +355,6 @@ local function spawnBringPartsGui(onCloseCallback)
         end
     end
 
-    -- RightControl para esconder/mostrar
     local mainStatus = true
     UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
         if input.KeyCode == Enum.KeyCode.RightControl and not gameProcessedEvent then
@@ -368,7 +363,6 @@ local function spawnBringPartsGui(onCloseCallback)
         end
     end)
 
-    -- Box
     Box.FocusLost:Connect(function(enterPressed)
         if enterPressed then
             player = getPlayer(Box.Text)
@@ -381,7 +375,6 @@ local function spawnBringPartsGui(onCloseCallback)
         end
     end)
 
-    -- Botão Bring
     Button.MouseButton1Click:Connect(function()
         if player then
             character = player.Character or player.CharacterAdded:Wait()
@@ -392,10 +385,8 @@ local function spawnBringPartsGui(onCloseCallback)
         end
     end)
 
-    -- Botão View
     ViewBtn.MouseButton1Click:Connect(startView)
 
-    -- Botão X
     CloseXBtn.MouseButton1Click:Connect(function()
         if blackHoleActive then
             toggleBlackHole()
@@ -594,6 +585,9 @@ local function flingPlayer(TargetPlayer)
     end
 end
 
+-- Espera 2 segundos antes de executar de verdade
+task.wait(2)
+
 -- // INTERFACE GRAFICA //
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 if PlayerGui:FindFirstChild("DracoswFlingGui") then
@@ -607,7 +601,8 @@ ScreenGui.Parent = PlayerGui
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 260, 0, 320)
-MainFrame.Position = UDim2.new(0.5, -130, 0.3, 0)
+-- Posição: Direita em cima
+MainFrame.Position = UDim2.new(1, -280, 0, 20)
 MainFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 35)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
